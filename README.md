@@ -9,7 +9,7 @@ This repository provides weekly modules with interactive Colab notebooks built u
 ## 📖 Week 1: Inbox Summarizer with Nexus
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](
-https://colab.research.google.com/github/YOUR_USERNAME/distributed-agentic-ai-course/blob/main/week1/week1_inbox_summarizer.ipynb)
+https://colab.research.google.com/github/kmchandy/distributed-agentic-ai-course/blob/main/week1/week1_inbox_summarizer.ipynb)
 
 **Objective**: Introduce students to agentic applications and distributed thinking by building an email assistant that summarizes inbox messages and suggests action items.
 
