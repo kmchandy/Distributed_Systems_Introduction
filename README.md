@@ -25,7 +25,7 @@ Distributed_Systems_Introduction_Draft/
 │   └── week1_inbox_summarizer_crewai.ipynb
 ├── week2/
 │   └── (coming soon)
-``
+```
 ---
 
 ## 🗂️  License
