@@ -7,7 +7,8 @@ Welcome to **Week 1** of the course *Distributed Systems through Agentic AI*. Th
 ## 📬 Week 1: Inbox Summarizer with Action Planner
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](
-https://colab.research.google.com/github/YOUR_USERNAME/distributed-agentic-ai-course/blob/main/week1/week1_inbox_summarizer_crewai.ipynb)
+https://colab.research.google.com/github/kmchandy/Distributed_Systems_Introduction/blob/main/week1/week1_inbox_summarizer_crewai.ipynb)
+
 
 In this lab, students:
 - Build a simple **Crew** of two agents.
