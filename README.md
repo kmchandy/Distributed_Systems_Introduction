@@ -53,7 +53,7 @@ pip install crewai
 ## 📬 Week 1: Introduction to agents, states, and messages with a simple example.
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](
-https://colab.research.google.com/github/YOUR_USERNAME/distributed-agentic-ai-course/blob/main/week1/week1_inbox_summarizer_crewai.ipynb)
+https://colab.research.google.com/github/kmchandy/distributed-systems-course/blob/main/week1/week1_inbox_summarizer_crewai.ipynb) 
 
 In this lab, students:
 - Build a simple **Crew** of two agents.
