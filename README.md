@@ -1,6 +1,6 @@
-# Distributed_Systems_Introduction_Draft
+# Distributed Systems Introduction
 
-A draft of a course on basic concepts of distributed systems. The course includes examples from different domains including Large Language Model (LLM) agents.
+A working draft of a course on basic concepts of distributed systems. The course includes examples from different domains including Large Language Model (LLM) agents.
 
 This repository provides weekly modules with interactive Colab notebooks built using tools such as **CrewAI**, 
 a framework for building distributed LLM agents
