@@ -1,38 +1,31 @@
 # Distributed_Systems_Introduction_Draft
 
-A draft of a course on distributed systems concepts that includes examples using Large Language Model (LLM) agents.
+A draft of a course on basic concepts of distributed systems. The course includes examples from different domains including Large Language Model (LLM) agents.
 
-This repository provides weekly modules with interactive Colab notebooks built using tools such as **Nexus**, a framework for building distributed applications
+This repository provides weekly modules with interactive Colab notebooks built using tools such as **CrewAI**, 
+a framework for building distributed LLM agents
 
 ---
 
 ## 📚 Course Goals
 
-- Introduce distributed systems concepts
-- Provide examples from different domains including AI agents.
+- Introduce distributed systems concepts.
+- Provide examples from different domains.
 
 ---
 
 ## 🗂️ Repository Structure
 
 ```
-distributed-agentic-ai-course/
+Distributed_Systems_Introduction_Draft/
 ├── README.md
 ├── LICENSE
+├── requirements.txt
 ├── week1/
-│   └── week1_inbox_summarizer.ipynb
+│   └── week1_inbox_summarizer_crewai.ipynb
 ├── week2/
 │   └── (coming soon)
-└── requirements.txt
-```
----
-
-## 🚀 Getting Started
-
-### Requirements
-- Python 3.10+
-- [Google Colab](https://colab.research.google.com/) or Jupyter Notebook
-- Nexus SDK: install using `pip install nexusai`
+``
 ---
 
 ## 📄 License
@@ -42,6 +35,17 @@ This course material is licensed under the [Creative Commons Attribution 4.0 Int
 You are free to use, adapt, and redistribute — even for commercial purposes — with proper attribution.
 
 ---
+
+## 📦 Requirements
+
+- Python 3.10+
+- Google Colab or Jupyter Notebook
+- Install CrewAI:
+```bash
+pip install crewai
+```
+---
+
 ## COURSE OUTLINE -- DRAFT
 
 ## 📖 Week 1: Inbox Summarizer with Nexus
