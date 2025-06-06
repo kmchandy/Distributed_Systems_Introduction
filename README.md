@@ -48,19 +48,17 @@ pip install crewai
 
 ## COURSE OUTLINE -- DRAFT
 
-## 📖 Week 1: Inbox Summarizer with Nexus
+---
+
+## 📬 Week 1: Introduction to agents, states, and messages with a simple example.
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](
-https://colab.research.google.com/github/kmchandy/distributed-agentic-ai-course/blob/main/week1/week1_inbox_summarizer.ipynb)
+https://colab.research.google.com/github/YOUR_USERNAME/distributed-agentic-ai-course/blob/main/week1/week1_inbox_summarizer_crewai.ipynb)
 
-**Objective**: 
-  - Introduce systems with multiple agents.
-  - Develop a simple application: an email assistant that summarizes inbox messages and suggests action items.
-
-**Topics Covered**:
-- Communication among multiple agents
-- Introduction to Nexus
-- Semantic processing of messages
-- Distributed responsibility and memory
+In this lab, students:
+- Build a simple **Crew** of two agents.
+- Use a `Summarizer` to analyze a set of mock emails.
+- Use a `Planner` to generate suggested actions.
+- Learn how CrewAI distributes responsibility across agents.
 
 ---
