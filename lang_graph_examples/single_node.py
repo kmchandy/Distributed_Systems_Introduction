@@ -1,11 +1,5 @@
 """
-This module is a simple example of how to use LangGraph with OpenAI's GPT-3.5-turbo model.
-The module has 5 steps:
-1. Set up OpenAI API client.
-2. Define a shared state structure using TypedDict.
-3. Specify the functions that will be executed by nodes in the graph.
-4. Build the state graph with nodes and edges.
-5. Run the graph with an input.
+This module is an example of a LangGraph with a single node.
 """
 
 import os
@@ -34,21 +28,23 @@ llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3)
 
 # ---------------------------------------------
 # Step 2: Define the shared state structure
-# This structure is often a TypedDict.
 # ----------------------------------------------
 
 
-class QAState(TypedDict):
+class MyState(TypedDict):
     question: str
     answer: str
 
 # ---------------------------------------------
 # Step 3: Specify the functions that are executed
-# by nodes in the graph
+# by nodes in the graph. These are typically LLM
+# agents.
 # ----------------------------------------------
 
 
-def answer_func(state: QAState) -> dict:
+def answer_agent(state: MyState) -> dict:
+    # The agent reads state["question"] and writes
+    # state["answer"].
     response = llm.invoke(state["question"])
     return {"answer": response.content}
 
@@ -56,21 +52,34 @@ def answer_func(state: QAState) -> dict:
 # ---------------------------------------------
 # Step 4: Build the graph
 # ----------------------------------------------
-builder = StateGraph(QAState)
-# Add nodes to the graph
-builder.add_node("answer_node", answer_func)
 
-# Define the edges between nodes of the graph.
+# 4.1 Create builder
+builder = StateGraph(MyState)
+
+# 4.2 Add nodes to the graph.
+# Give a name to the node and specify the function
+# that will be executed by the node.
+builder.add_node("answer_node", answer_agent)
+
+# 4.3 Define the edges between nodes of the graph.
 # In this case, the graph has a single node and
 # no edges.
-# Specify the entry and finish points of the graph.
+
+# 4.4 Specify the entry and finish points of the graph.
 builder.set_entry_point("answer_node")
 builder.set_finish_point("answer_node")
 
+# 4.5 Compile the graph
 graph = builder.compile()
 
 # ---------------------------------------------
 # Step 5: Run the graph with an input
+# The input is a dictionary that conforms to the
+# state structure.
+# In this case the entry point -- i.e. answer_node --
+# is invoked with MyState["question"] set to
+# "What is the capital of France?", while
+# MyState["answer"] is empty.
 # ----------------------------------------------
 result = graph.invoke({"question": "What is the capital of France?"})
 print(result)
