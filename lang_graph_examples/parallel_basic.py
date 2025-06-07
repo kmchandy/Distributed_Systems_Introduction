@@ -1,14 +1,9 @@
 """
-This module is a simple example of how to use LangGraph with OpenAI's GPT-3.5-turbo model.
-The graph is a fork-join example with two parallel nodes feeding a single merge node.
-The module has 5 steps:
-1. Set up OpenAI API client.
-2. Define a shared state structure using TypedDict.
-3. Specify the functions that will be executed by nodes in the graph.
-4. Build the state graph with nodes and edges.
-5. Run the graph with an input.
+This module is an example of a LangGraph with two nodes in parallel and
+where both needs feed into a single merge node.
 """
 
+import pprint
 import os
 from typing import TypedDict
 from openai import OpenAI
@@ -82,15 +77,21 @@ def merge_agent(state: MyState) -> dict:
 # Step 4: Build the graph
 # ----------------------------------------------
 
+# 4.1 Create builder
 builder = StateGraph(MyState)
 
-# Add nodes to the graph
+# 4.2 Specify nodes of the graph
+# Give a name to each node and specify the function
+# that will be executed by the node.
+# In this case, in addition to greet_node, topic_node, and
+# merge_node, we create an entry node that feeds both
+# greet_node and topic_node. The entry node is a no-op.
 builder.add_node("entry_node", lambda x: x)
 builder.add_node("greet_node", greet_agent)
 builder.add_node("topic_node", topic_agent)
 builder.add_node("merge_node", merge_agent)
 
-# Add edges to the graph
+# 4.3 Specify the edges between nodes of the graph.
 builder.add_edge("entry_node", "greet_node")
 builder.add_edge("entry_node", "topic_node")
 builder.add_edge("greet_node", "merge_node")
@@ -107,5 +108,5 @@ graph = builder.compile()
 # ----------------------------------------------
 result = graph.invoke({"name": "Prof. K. Mani Chandy",
                       "topic": "distributed systems"})
-print("🎉 Final Output:\n")
-print(result["summary"])
+print("🎉 Final Output -- MyState when graph execution terminates:\n")
+pprint.pprint(result)
