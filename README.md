@@ -1,9 +1,7 @@
 # Distributed Systems Introduction
 
-A working draft of a course on basic concepts of distributed systems. The course includes examples from different domains including Large Language Model (LLM) agents.
-
-This repository provides weekly modules with interactive Colab notebooks built using tools such as **CrewAI**, 
-a framework for building distributed LLM agents
+A working draft of a course on basic concepts of distributed systems. 
+The course includes examples from different domains including Large Language Model (LLM) agents.
 
 ---
 
@@ -22,7 +20,7 @@ Distributed_Systems_Introduction_Draft/
 ├── LICENSE
 ├── requirements.txt
 ├── week1/
-│   └── week1_inbox_summarizer_crewai.ipynb
+│   └── (coming soon)
 ├── week2/
 │   └── (coming soon)
 ```
@@ -52,13 +50,7 @@ pip install crewai
 
 ## 📬 Week 1: Introduction to agents, states, and messages with a simple example.
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](
-https://colab.research.google.com/github/kmchandy/distributed-systems-course/blob/main/week1/week1_inbox_summarizer_crewai.ipynb) 
-
-In this lab, students:
-- Build a simple **Crew** of two agents.
-- Use a `Summarizer` to analyze a set of mock emails.
-- Use a `Planner` to generate suggested actions.
-- Learn how CrewAI distributes responsibility across agents.
+- Introduction to LangGraph.
+- 
 
 ---
