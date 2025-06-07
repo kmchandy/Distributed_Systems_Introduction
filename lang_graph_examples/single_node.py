@@ -80,6 +80,8 @@ graph = builder.compile()
 # is invoked with MyState["question"] set to
 # "What is the capital of France?", while
 # MyState["answer"] is empty.
+# The result is the state after the nodes in the
+# graph have been executed.
 # ----------------------------------------------
 result = graph.invoke({"question": "What is the capital of France?"})
 print(result)
