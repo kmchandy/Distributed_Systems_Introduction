@@ -9,7 +9,6 @@ The module has 5 steps:
 5. Run the graph with an input.
 """
 
-import sys
 import os
 from typing import TypedDict
 from openai import OpenAI
@@ -48,8 +47,6 @@ class UserState(TypedDict):
 # Step 3: Specify the functions that are executed
 # by nodes in the graph
 # ----------------------------------------------
-
-# Tech support agent
 
 
 def tech_agent(state: UserState) -> dict:

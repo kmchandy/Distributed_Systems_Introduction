@@ -9,7 +9,6 @@ The module has 5 steps:
 5. Run the graph with an input.
 """
 
-import sys
 import os
 from typing import TypedDict
 from openai import OpenAI
@@ -71,7 +70,8 @@ def topic_agent(state: MyState) -> dict:
 
 def merge_agent(state: MyState) -> dict:
     '''
-    Reads state['greeting'] and state['fact'] and assigns value to state['summary'].
+    Reads state['greeting'] and state['fact'] and 
+    assigns value to state['summary'].
     '''
     response = llm.invoke(
         f"Make a joke about {state['greeting']} and {state['fact']}")
@@ -81,22 +81,23 @@ def merge_agent(state: MyState) -> dict:
 # ---------------------------------------------
 # Step 4: Build the graph
 # ----------------------------------------------
+
 builder = StateGraph(MyState)
 
 # Add nodes to the graph
-builder.add_node("entry", lambda x: x)
+builder.add_node("entry_node", lambda x: x)
 builder.add_node("greet_node", greet_agent)
 builder.add_node("topic_node", topic_agent)
 builder.add_node("merge_node", merge_agent)
 
 # Add edges to the graph
-builder.add_edge("entry", "greet_node")
-builder.add_edge("entry", "topic_node")
+builder.add_edge("entry_node", "greet_node")
+builder.add_edge("entry_node", "topic_node")
 builder.add_edge("greet_node", "merge_node")
 builder.add_edge("topic_node", "merge_node")
 
 # Set the entry and finish points for the graph
-builder.set_entry_point("entry")
+builder.set_entry_point("entry_node")
 builder.set_finish_point("merge_node")
 
 graph = builder.compile()
