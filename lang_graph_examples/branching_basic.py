@@ -1,12 +1,7 @@
 """
-This module is a simple example of how to use LangGraph with OpenAI's GPT-3.5-turbo model.
-The graph is an example of branching in LangGraph.
-The module has 5 steps:
-1. Set up OpenAI API client.
-2. Define a shared state structure using TypedDict.
-3. Specify the functions that will be executed by nodes in the graph.
-4. Build the state graph with nodes and edges.
-5. Run the graph with an input.
+This module is an example of a LangGraph with a branching
+node that routes the flow based on content.
+
 """
 
 import os
@@ -39,7 +34,7 @@ llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
 # ----------------------------------------------
 
 
-class UserState(TypedDict):
+class MyState(TypedDict):
     question: str
     answer: str
 
@@ -49,21 +44,21 @@ class UserState(TypedDict):
 # ----------------------------------------------
 
 
-def tech_agent(state: UserState) -> dict:
+def tech_agent(state: MyState) -> dict:
     response = llm.invoke(f"Answer as tech support: {state['question']}")
     return {"answer": response.content}
 
 # General help desk agent
 
 
-def general_agent(state: UserState) -> dict:
+def general_agent(state: MyState) -> dict:
     response = llm.invoke(f"Answer as general help desk: {state['question']}")
     return {"answer": response.content}
 
 # Router function for branching
 
 
-def router(state: UserState) -> str:
+def router(state: MyState) -> str:
     if 'tech' in state['question'].lower():
         return {"next_node": "tech_node"}
     else:
@@ -73,7 +68,7 @@ def router(state: UserState) -> str:
 # ---------------------------------------------
 # Step 4: Build the graph
 # ----------------------------------------------
-builder = StateGraph(UserState)
+builder = StateGraph(MyState)
 
 # Add nodes to the graph
 builder.add_node("router_node", router)
