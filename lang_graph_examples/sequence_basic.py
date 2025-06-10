@@ -45,19 +45,27 @@ class MyState(TypedDict):
 
 
 def greet_agent(state: MyState) -> dict:
+    '''
+    Reads state['name'] and assigns value to state['greeting'].
+
+    '''
     name = state["name"]
-    response = llm.invoke(
-        f"Say a single kind short sentence about the name {name}.\n")
+    prompt = f"Say a single kind short sentence about the name {name}.\n"
+    response = llm.invoke(prompt)
     # Put the content of the response into the state of the agent.
     # state["greeting"] becomes response.content.
-    # The response is not printed.
+    # Note: The response is not automatically printed.
     return {"greeting": response.content}
 
 
 def compliment_agent(state: MyState) -> dict:
+    '''
+    Reads state['greeting'] and assigns value to state['compliment'].
+
+    '''
     greeting = state["greeting"]
-    response = llm.invoke(
-        f"Say one motivational sentence based on {greeting}.")
+    prompt = f"Say one motivational sentence based on {greeting}."
+    response = llm.invoke(prompt)
     # Put the content of the response into the state of the agent.
     # state["compliment"] becomes response.content
     return {"compliment": response.content}
@@ -111,16 +119,20 @@ Finally, the graph returns a state with values for all three keys.
 '''
 if __name__ == "__main__":
     '''Example Usage
-    python3 LangGraph_Simple_Two_nodes_Example.py "Violet"
+    python3 sequence_basic.py "Rose"
     '''
     if len(sys.argv) < 2:
-        print("Usage: python3 LangGraph_Simple_Two_nodes_Example.py [name]")
+        print("Usage: python3 sequence_basic.py [name]")
         sys.exit(1)
     # Get input_name from command line arguments
     input_name = sys.argv[1]
 
-    # Execute the graph. The input to the graph is a dict and pretty print
-    # the result of the graph execution.
-    result = graph.invoke({"name": input_name})
+    # graph_prompt, is a dict that specifies some fields of state.
+    graph_prompt = {"name": input_name}
+    # Execute the graph.
+    result = graph.invoke(graph_prompt)
+
+    # result is the final value of state.
+    # pretty print the result
     import pprint
     pprint.pprint(result)

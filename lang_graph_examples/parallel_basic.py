@@ -1,6 +1,7 @@
 """
 This module is an example of a LangGraph with two nodes in parallel and
 where both needs feed into a single merge node.
+
 """
 
 import pprint
@@ -50,16 +51,20 @@ class MyState(TypedDict):
 def greet_agent(state: MyState) -> dict:
     '''
     Reads state['name'] and assigns value to state['greeting'].
+
     '''
-    response = llm.invoke(f"Say a short sentence about {state['name']}.")
+    prompt = f"Say a short sentence about {state['name']}."
+    response = llm.invoke(prompt)
     return {"greeting": response.content}
 
 
 def topic_agent(state: MyState) -> dict:
     '''
     Reads state['topic'] and assigns value to state['fact'].
+
     '''
-    response = llm.invoke(f"Tell me a short fact about {state['topic']}.")
+    prompt = f"Tell me a short fact about {state['topic']}."
+    response = llm.invoke(prompt)
     return {"fact": response.content}
 
 
@@ -67,9 +72,10 @@ def merge_agent(state: MyState) -> dict:
     '''
     Reads state['greeting'] and state['fact'] and 
     assigns value to state['summary'].
+
     '''
-    response = llm.invoke(
-        f"Make a joke about {state['greeting']} and {state['fact']}")
+    prompt = f"Make a joke about {state['greeting']} and {state['fact']}"
+    response = llm.invoke(prompt)
     return {"summary": response.content}
 
 
@@ -97,16 +103,24 @@ builder.add_edge("entry_node", "topic_node")
 builder.add_edge("greet_node", "merge_node")
 builder.add_edge("topic_node", "merge_node")
 
-# Set the entry and finish points for the graph
+# 4.4 Set the entry and finish nodes of the graph
 builder.set_entry_point("entry_node")
 builder.set_finish_point("merge_node")
 
+# 4.5 Compile the graph
 graph = builder.compile()
 
 # ---------------------------------------------
 # Step 5: Run graph
 # ----------------------------------------------
-result = graph.invoke({"name": "Prof. K. Mani Chandy",
-                      "topic": "distributed systems"})
-print("🎉 Final Output -- MyState when graph execution terminates:\n")
+
+# graph_prompt, is a dict that specifies some fields of state.
+graph_prompt = {
+    "name": "Prof. K. Mani Chandy",
+    "topic": "distributed systems"
+}
+# Execute the graph.
+result = graph.invoke(graph_prompt)
+# result is the final value of state.
+print("🎉 Result:\n")
 pprint.pprint(result)

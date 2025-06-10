@@ -58,11 +58,11 @@ def general_agent(state: MyState) -> dict:
 # Router function for branching
 
 
-def router(state: MyState) -> str:
+def router_agent(state: MyState) -> str:
     if 'tech' in state['question'].lower():
-        return {"next_node": "tech_node"}
+        return {"next_node": "IT_help"}
     else:
-        return {"next_node": "general_node"}
+        return {"next_node": "general_help_desk"}
 
 
 # ---------------------------------------------
@@ -71,17 +71,24 @@ def router(state: MyState) -> str:
 builder = StateGraph(MyState)
 
 # Add nodes to the graph
-builder.add_node("router_node", router)
+builder.add_node("router_node", router_agent)
 builder.add_node("tech_node", tech_agent)
 builder.add_node("general_node", general_agent)
 
 # Add edges to the graph with conditional branching
+# The code for conditional branching
 builder.add_conditional_edges(
+    # router_node is the name of node from which branching occurs
     "router_node",
-    lambda x: x["next_node"],  # routing function
+    # route_agent returns dicts {'next_node': 'node_name'}
+    # So the lambda function argument is 'next_node'.
+    lambda x: x["next_node"],
+    # The lambda function returns either "IT_help" or "general_help_desk".
+    # The following dict specifies the next node to be executed
+    # depending on the value returned by the lambda function.
     {
-        "tech_node": "tech_node",
-        "general_node": "general_node"
+        "IT_help": "tech_node",
+        "general_help_desk": "general_node"
     }
 )
 
