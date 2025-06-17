@@ -34,80 +34,92 @@ llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
 # ----------------------------------------------
 
 
-class MyState(TypedDict):
+class State(TypedDict):
     question: str
     answer: str
 
 # ---------------------------------------------
 # Step 3: Specify the functions that are executed
-# by nodes in the graph
+# by nodes in the graph.
+# Here we specify three agents:
+# tech_agent, help_desk_agent, and router_agent.
 # ----------------------------------------------
+# tech agent
 
 
-def tech_agent(state: MyState) -> dict:
+def tech_agent(state: State) -> dict:
     response = llm.invoke(f"Answer as tech support: {state['question']}")
     return {"answer": response.content}
 
-# General help desk agent
+# help_desk help desk agent
 
 
-def general_agent(state: MyState) -> dict:
-    response = llm.invoke(f"Answer as general help desk: {state['question']}")
+def help_desk_agent(state: State) -> dict:
+    response = llm.invoke(
+        f"Answer as help_desk help desk: {state['question']}")
     return {"answer": response.content}
 
-# Router function for branching
+# Router agent for branching
 
 
-def router_agent(state: MyState) -> str:
+def router_agent(state: State) -> str:
     if 'tech' in state['question'].lower():
-        return {"next_node": "IT_help"}
+        return {"next": "IT_help"}
     else:
-        return {"next_node": "general_help_desk"}
+        return {"next": "help_desk"}
 
 
 # ---------------------------------------------
 # Step 4: Build the graph
 # ----------------------------------------------
-builder = StateGraph(MyState)
 
-# Add nodes to the graph
+# 4.1 Create builder
+builder = StateGraph(State)
+
+# 4.2 Add nodes to the graph.
+# Give a name to the node and specify the function
+# that will be executed by the node.
+# Here we create three nodes:
+# router_node, tech_node, and help_desk_node.
 builder.add_node("router_node", router_agent)
 builder.add_node("tech_node", tech_agent)
-builder.add_node("general_node", general_agent)
+builder.add_node("help_desk_node", help_desk_agent)
 
-# Add edges to the graph with conditional branching
+# 4.3 Add edges to the graph.
+# In this example, all the edges are conditional edges.
 # The code for conditional branching
 builder.add_conditional_edges(
     # router_node is the name of node from which branching occurs
     "router_node",
-    # route_agent returns dicts {'next_node': 'node_name'}
-    # So the lambda function argument is 'next_node'.
-    lambda x: x["next_node"],
-    # The lambda function returns either "IT_help" or "general_help_desk".
+    # route_agent returns dicts {'next': 'node_name'}
+    # So the lambda function argument is 'next'.
+    lambda x: x["next"],
+    # The lambda function returns either "IT_help" or "help_desk".
     # The following dict specifies the next node to be executed
     # depending on the value returned by the lambda function.
     {
         "IT_help": "tech_node",
-        "general_help_desk": "general_node"
+        "help_desk": "help_desk_node"
     }
 )
 
-# Set the entry and finish points for the graph
+# 4.4 Set the entry and finish points for the graph
 builder.set_entry_point("router_node")
 builder.set_finish_point("tech_node")
-builder.set_finish_point("general_node")
+builder.set_finish_point("help_desk_node")
 
+# 4.5 Compile the graph
 graph = builder.compile()
 
 # ---------------------------------------------
 # Step 5: Run graph
 # ----------------------------------------------
-inputs = [
+graph_prompts = [
     {"question": "I need help with tech specs for my laptop."},
     {"question": "What are your office hours?"}
 ]
 
-for i, inp in enumerate(inputs):
-    print(f"\n❓ Input {i+1}: {inp['question']}")
-    result = graph.invoke(inp)
+for i, graph_prompt in enumerate(graph_prompts):
+    print(f"\n❓ Input {i+1}: {graph_prompt['question']}")
+    result = graph.invoke(graph_prompt)
     print("💬 Response:", result['answer'])

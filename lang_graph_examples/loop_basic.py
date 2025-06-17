@@ -1,5 +1,7 @@
 """
 This module is an example of a LangGraph with two nodes in a loop.
+In this example the graph is prompted with a text and the graph
+returns with a text that is a positive spin on the original text.
 
 """
 
@@ -33,18 +35,20 @@ llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
 # ----------------------------------------------
 
 
-class MyState(TypedDict):
+class State(TypedDict):
     text: str
     sentiment_score: float
 
 # ---------------------------------------------
 # Step 3: Specify the functions that are executed
 # by nodes in the graph.
+# In this example we create three agents:
+# summarizer_agent, evaluator_agent, and router_agent.
 # ----------------------------------------------
 
 
 # summarizer_agent rewrites the text in a positive tone.
-def summarizer_agent(state: MyState) -> dict:
+def summarizer_agent(state: State) -> dict:
     prompt = f"Write {state['text']} in as positive a tone as possible."
     result = llm.invoke(prompt)
     print(f"result: {result.content} \n")
@@ -52,7 +56,7 @@ def summarizer_agent(state: MyState) -> dict:
 
 
 # evaluator_agent estimates the sentiment of a text (using naive approach)
-def evaluator_agent(state: MyState) -> dict:
+def evaluator_agent(state: State) -> dict:
     prompt = f"""On a scale from 0 (very negative) to 1 (very positive), 
     how positive is {state['text']}? Only return a number.\n\n"""
     response = llm.invoke(prompt)
@@ -68,11 +72,11 @@ def evaluator_agent(state: MyState) -> dict:
 
 
 # router_agent routes control to end_node or summarizer_node based on sentiment score
-def router_agent(state: MyState) -> dict:
-    if state["sentiment_score"] >= 0.8:
-        return {"next_node": "terminate_iterations"}
+def router_agent(state: State) -> dict:
+    if state["sentiment_score"] >= 0.85:
+        return {"next": "terminate_iterations"}
     else:
-        return {"next_node": "iterate_again"}
+        return {"next": "iterate_again"}
 
 
 # ---------------------------------------------
@@ -80,7 +84,7 @@ def router_agent(state: MyState) -> dict:
 # ----------------------------------------------
 
 # 4.1 Create builder
-builder = StateGraph(MyState)
+builder = StateGraph(State)
 
 # # 4.2 Add nodes to the graph.
 # Create an "end_node" to finish the graph. The end_node does nothing.
@@ -99,7 +103,7 @@ builder.add_edge("evaluator_node", "router_node")
 # Execute "summarizer_node" when router_agent returns "iterate_again"
 builder.add_conditional_edges(
     "router_node",
-    lambda x: x["next_node"],  # routing function
+    lambda x: x["next"],  # routing function
     {
         "terminate_iterations": "end_node",
         "iterate_again": "summarizer_node"
@@ -119,7 +123,7 @@ graph = builder.compile()
 
 # graph_prompt, is a dict that specifies some fields of state.
 graph_prompt = {
-    "text": "The economy is in shambles because of tariffs. Inflation is high and unemployment is rising",
+    "text": "The economy is in shambles. Inflation is high and unemployment is rising",
     "sentiment_score": 0.0,
 }
 # Execute the graph.

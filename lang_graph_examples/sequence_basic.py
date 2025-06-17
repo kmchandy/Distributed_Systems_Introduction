@@ -33,7 +33,7 @@ llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3)
 # ----------------------------------------------
 
 
-class MyState(TypedDict):
+class State(TypedDict):
     name: str
     greeting: str
     compliment: str
@@ -44,7 +44,7 @@ class MyState(TypedDict):
 # ----------------------------------------------
 
 
-def greet_agent(state: MyState) -> dict:
+def greet_agent(state: State) -> dict:
     '''
     Reads state['name'] and assigns value to state['greeting'].
 
@@ -58,7 +58,7 @@ def greet_agent(state: MyState) -> dict:
     return {"greeting": response.content}
 
 
-def compliment_agent(state: MyState) -> dict:
+def compliment_agent(state: State) -> dict:
     '''
     Reads state['greeting'] and assigns value to state['compliment'].
 
@@ -76,7 +76,7 @@ def compliment_agent(state: MyState) -> dict:
 # ----------------------------------------------
 
 # 4.1 Create builder
-builder = StateGraph(MyState)
+builder = StateGraph(State)
 
 # 4.2 Add nodes to the graph.
 # Give a name to the node and specify the function
@@ -104,7 +104,7 @@ graph = builder.compile()
 '''
 Execution of the graph is as follows.
 The graph is invoked with an input that is a dictionary.
-The keys of the input dict must match the keys in MyState.
+The keys of the input dict must match the keys in State.
 
 The entry point node, greet_node, is executed with a state
 specified by the dict, {"name": input_name}, in the invoke.
@@ -134,5 +134,6 @@ if __name__ == "__main__":
 
     # result is the final value of state.
     # pretty print the result
+    print(f"Printing state after graph execution completes. \n")
     import pprint
     pprint.pprint(result)

@@ -37,14 +37,14 @@ This folder contains a structured series of LangGraph examples. Each example int
 ### 4. Looping / Iteration
 - **Concept**: Repeat a step until a condition is met (e.g., quality or approval).
 - **Example**: Refine a summary until it meets quality criteria.
-- **File**: _(coming soon)_
+- **File**: 'loop_basic.py'
 
 ---
 
 ### 5. Map-Reduce Pattern
 - **Concept**: Distribute computation over multiple nodes and aggregate results.
 - **Example**: Analyze documents in parallel, summarize all.
-- **File**: _(coming soon)_
+- **File**: 'map_reduce_basic.py'
 
 ---
 

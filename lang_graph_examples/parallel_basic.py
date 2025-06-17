@@ -35,7 +35,7 @@ llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
 # ----------------------------------------------
 
 
-class MyState(TypedDict):
+class State(TypedDict):
     name: str
     topic: str
     greeting: str
@@ -48,7 +48,7 @@ class MyState(TypedDict):
 # ----------------------------------------------
 
 
-def greet_agent(state: MyState) -> dict:
+def greet_agent(state: State) -> dict:
     '''
     Reads state['name'] and assigns value to state['greeting'].
 
@@ -58,7 +58,7 @@ def greet_agent(state: MyState) -> dict:
     return {"greeting": response.content}
 
 
-def topic_agent(state: MyState) -> dict:
+def topic_agent(state: State) -> dict:
     '''
     Reads state['topic'] and assigns value to state['fact'].
 
@@ -68,7 +68,7 @@ def topic_agent(state: MyState) -> dict:
     return {"fact": response.content}
 
 
-def merge_agent(state: MyState) -> dict:
+def merge_agent(state: State) -> dict:
     '''
     Reads state['greeting'] and state['fact'] and 
     assigns value to state['summary'].
@@ -84,7 +84,7 @@ def merge_agent(state: MyState) -> dict:
 # ----------------------------------------------
 
 # 4.1 Create builder
-builder = StateGraph(MyState)
+builder = StateGraph(State)
 
 # 4.2 Specify nodes of the graph
 # Give a name to each node and specify the function
@@ -122,5 +122,6 @@ graph_prompt = {
 # Execute the graph.
 result = graph.invoke(graph_prompt)
 # result is the final value of state.
+print(f"Printing the state after graph execution completes. \n")
 print("🎉 Result:\n")
 pprint.pprint(result)
