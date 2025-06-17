@@ -1,5 +1,10 @@
 """
 This module is an example of a LangGraph with two nodes in sequence.
+The module is called from the command line by passing a name as an 
+argument.
+Example Usage
+python3 sequence_basic.py "Rose"
+
 """
 
 import sys
@@ -28,8 +33,7 @@ client = OpenAI(api_key=api_key)
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3)
 
 # ---------------------------------------------
-# Step 2: Define the shared state structure
-# This structure is often a TypedDict.
+# Step 2: Define the state: a TypedDict.
 # ----------------------------------------------
 
 
@@ -40,11 +44,13 @@ class State(TypedDict):
 
 # ---------------------------------------------
 # Step 3: Specify the functions that are executed
-# by nodes in the graph
+# by nodes in the graph.
+# The functions return a dict where the keys are
+# also keys of State.
 # ----------------------------------------------
 
 
-def greet_agent(state: State) -> dict:
+def greet_function(state: State) -> dict:
     '''
     Reads state['name'] and assigns value to state['greeting'].
 
@@ -52,13 +58,12 @@ def greet_agent(state: State) -> dict:
     name = state["name"]
     prompt = f"Say a single kind short sentence about the name {name}.\n"
     response = llm.invoke(prompt)
-    # Put the content of the response into the state of the agent.
+    # Put the content of the response into the state of the function.
     # state["greeting"] becomes response.content.
-    # Note: The response is not automatically printed.
     return {"greeting": response.content}
 
 
-def compliment_agent(state: State) -> dict:
+def compliment_function(state: State) -> dict:
     '''
     Reads state['greeting'] and assigns value to state['compliment'].
 
@@ -66,13 +71,15 @@ def compliment_agent(state: State) -> dict:
     greeting = state["greeting"]
     prompt = f"Say one motivational sentence based on {greeting}."
     response = llm.invoke(prompt)
-    # Put the content of the response into the state of the agent.
+    # Put the content of the response into the state of the function.
     # state["compliment"] becomes response.content
     return {"compliment": response.content}
 
 
 # ---------------------------------------------
 # Step 4: Build the graph
+# The nodes of the graph are agents that execute
+# functions that read and write the state.
 # ----------------------------------------------
 
 # 4.1 Create builder
@@ -82,8 +89,8 @@ builder = StateGraph(State)
 # Give a name to the node and specify the function
 # that will be executed by the node.
 # Here we create two nodes called "greet_node" and "compliment_node".
-builder.add_node("greet_node", greet_agent)
-builder.add_node("compliment_node", compliment_agent)
+builder.add_node("greet_node", greet_function)
+builder.add_node("compliment_node", compliment_function)
 
 # 4.3 Define the edges between nodes of the graph.
 # In this case, the graph has a single edge.
@@ -120,6 +127,7 @@ Finally, the graph returns a state with values for all three keys.
 if __name__ == "__main__":
     '''Example Usage
     python3 sequence_basic.py "Rose"
+
     '''
     if len(sys.argv) < 2:
         print("Usage: python3 sequence_basic.py [name]")
@@ -134,6 +142,7 @@ if __name__ == "__main__":
 
     # result is the final value of state.
     # pretty print the result
-    print(f"Printing state after graph execution completes. \n")
+    print(f"Printing the state after graph execution completes. \n")
+    print(f"The state is a dict with three keys: name, greeting, compliment \n")
     import pprint
     pprint.pprint(result)

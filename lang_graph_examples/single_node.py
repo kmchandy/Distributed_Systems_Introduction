@@ -3,6 +3,7 @@ This module is an example of a LangGraph with a single node.
 
 """
 
+import pprint
 import os
 from typing import TypedDict
 from openai import OpenAI
@@ -28,7 +29,7 @@ client = OpenAI(api_key=api_key)
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3)
 
 # ---------------------------------------------
-# Step 2: Define the state.
+# Step 2: Define the state: a TypedDict.
 # ----------------------------------------------
 
 
@@ -39,13 +40,20 @@ class State(TypedDict):
 # ---------------------------------------------
 # Step 3: Specify the functions that are executed
 # by nodes in the graph.
+# The functions return a dict where the keys are
+# also keys of State.
+# In this case, the function returns a dict
+# with a single key "answer" which is a key of State.
 # ----------------------------------------------
 
 
 def answer_function(state: State) -> dict:
     # The function reads state["question"] and writes
     # state["answer"].
-    response = llm.invoke(state["question"])
+    prompt = f"Answer the question: {state['question']}"
+    response = llm.invoke(prompt)
+    # Put the content of the response into the state of the function.
+    # state["snswer"] becomes response.content.
     return {"answer": response.content}
 
 
@@ -95,5 +103,6 @@ graph_prompt = {
     "question": "What is the capital of France?"
 }
 result = graph.invoke(graph_prompt)
-# print the state after the graph completes execution.
-print(result)
+print(f"Printing the state after graph execution completes. \n")
+print("🎉 Result:\n")
+pprint.pprint(result)

@@ -1,6 +1,7 @@
 """
 This module is an example of a LangGraph with a branching
-node that routes the flow based on content.
+node that routes the flow of execution through the graph
+based on the state.
 
 """
 
@@ -30,7 +31,7 @@ llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
 
 # ---------------------------------------------
 # Step 2: Define the shared state structure
-# This structure is often a TypedDict.
+#
 # ----------------------------------------------
 
 
@@ -41,32 +42,39 @@ class State(TypedDict):
 # ---------------------------------------------
 # Step 3: Specify the functions that are executed
 # by nodes in the graph.
-# Here we specify three agents:
-# tech_agent, help_desk_agent, and router_agent.
+# Each function returns a dict with keys that are
+# also keys of State.
+# Here we specify three functions:
+# tech_function, help_desk_function, and router_function.
+#
 # ----------------------------------------------
-# tech agent
+
+# tech function
 
 
-def tech_agent(state: State) -> dict:
-    response = llm.invoke(f"Answer as tech support: {state['question']}")
+def tech_function(state: State) -> dict:
+    prompt = f"You are a tech support expert. Answer the question: {state['question']}"
+    response = llm.invoke(prompt)
+    # state["answer"] becomes response.content.
     return {"answer": response.content}
 
-# help_desk help desk agent
+# help_desk help desk function
 
 
-def help_desk_agent(state: State) -> dict:
-    response = llm.invoke(
-        f"Answer as help_desk help desk: {state['question']}")
+def help_desk_function(state: State) -> dict:
+    prompt = f"You are a help desk assistant. Answer the question: {state['question']}"
+    response = llm.invoke(prompt)
+    # state["answer"] becomes response.content.
     return {"answer": response.content}
 
-# Router agent for branching
+# Router function for branching
 
 
-def router_agent(state: State) -> str:
+def router_function(state: State) -> str:
     if 'tech' in state['question'].lower():
-        return {"next": "IT_help"}
+        return {"next": "ask_IT"}
     else:
-        return {"next": "help_desk"}
+        return {"next": "ask_help_desk"}
 
 
 # ---------------------------------------------
@@ -81,9 +89,9 @@ builder = StateGraph(State)
 # that will be executed by the node.
 # Here we create three nodes:
 # router_node, tech_node, and help_desk_node.
-builder.add_node("router_node", router_agent)
-builder.add_node("tech_node", tech_agent)
-builder.add_node("help_desk_node", help_desk_agent)
+builder.add_node("router_node", router_function)
+builder.add_node("tech_node", tech_function)
+builder.add_node("help_desk_node", help_desk_function)
 
 # 4.3 Add edges to the graph.
 # In this example, all the edges are conditional edges.
@@ -91,15 +99,15 @@ builder.add_node("help_desk_node", help_desk_agent)
 builder.add_conditional_edges(
     # router_node is the name of node from which branching occurs
     "router_node",
-    # route_agent returns dicts {'next': 'node_name'}
+    # route_function returns dicts {'next': 'node_name'}
     # So the lambda function argument is 'next'.
     lambda x: x["next"],
-    # The lambda function returns either "IT_help" or "help_desk".
+    # The lambda function returns either "ask_IT" or "ask_help_desk".
     # The following dict specifies the next node to be executed
     # depending on the value returned by the lambda function.
     {
-        "IT_help": "tech_node",
-        "help_desk": "help_desk_node"
+        "ask_IT": "tech_node",
+        "ask_help_desk": "help_desk_node"
     }
 )
 
