@@ -70,7 +70,14 @@ def help_desk_function(state: State) -> dict:
 # Router function for branching
 
 
-def router_function(state: State) -> str:
+def router_function(state: State) -> dict:
+    '''
+    This function is used in builder.add_conditional_edges()
+    which routes flow to tech_node if this function returns
+    {"next": "ask_IT"} and to help_desk_node if this function
+    returns {"next": "ask_help_desk"}.
+
+    '''
     if 'tech' in state['question'].lower():
         return {"next": "ask_IT"}
     else:

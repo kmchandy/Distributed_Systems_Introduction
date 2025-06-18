@@ -34,9 +34,10 @@ llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
 # Step 2: Define the shared state structure.
 # Define the shared state with Annotated merge for summaries.
 # The Annotated merge allows each agent to append a str
-# (hte summary made by that agent) to the list of summaries.
+# (the summary made by that agent) to the list of summaries.
 # Without Annotated operator.add, the list, summaries, would be
-# overwritten by each agent, instead of appending to it.
+# overwritten by each agent. The Annotated operator.add says
+# that updates to summaries should be added to summaries.
 
 # ----------------------------------------------
 
