@@ -1,5 +1,6 @@
 """
 This module is an example of a LangGraph with two nodes in sequence.
+See another example of nodes in sequence in multi_agent_coordination.py
 The module is called from the command line by passing a name as an 
 argument.
 Example Usage
