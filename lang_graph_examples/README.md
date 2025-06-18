@@ -51,7 +51,7 @@ This folder contains a structured series of LangGraph examples. Each example int
 ### 6. Modular Subgraphs
 - **Concept**: Encapsulate reusable logic in subgraphs.
 - **Example**: Authentication subgraph reused across workflows.
-- **File**: _(coming soon)_
+- **File**: 'modular_subgraph_basic.py'
 
 ---
 
