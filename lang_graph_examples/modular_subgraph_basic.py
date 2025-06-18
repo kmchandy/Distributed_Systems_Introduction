@@ -63,7 +63,8 @@ def check_token(state: SubGraphState):
 
 
 def deny_access(state: SubGraphState):
-    print("Access Denied.")
+    print(
+        f"Access Denied. Invalid authentication token: {state['auth_token']}")
     return state
 
 
@@ -162,6 +163,7 @@ main_graph = main_builder.compile()
 # ---------------------------------------------
 # Step 5: Run graph
 # ----------------------------------------------
+print("---- Results of valid and invalid token tests ---- \n")
 print("---- Valid Token Test ----")
 graph_prompt = {
     "user_id": "alice",
