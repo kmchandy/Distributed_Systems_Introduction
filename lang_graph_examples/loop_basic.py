@@ -31,7 +31,7 @@ llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
 
 # ---------------------------------------------
 # Step 2: Define the shared state structure
-# This structure is often a TypedDict.
+# The state is a TypedDict.
 # ----------------------------------------------
 
 
@@ -42,21 +42,24 @@ class State(TypedDict):
 # ---------------------------------------------
 # Step 3: Specify the functions that are executed
 # by nodes in the graph.
-# In this example we create three agents:
-# summarizer_agent, evaluator_agent, and router_agent.
+# The functions return a dict where the keys are
+# also keys of State.
+# In this example we define three functions:
+# summarizer_function, evaluator_function, and router_function.
 # ----------------------------------------------
 
 
-# summarizer_agent rewrites the text in a positive tone.
-def summarizer_agent(state: State) -> dict:
+# summarizer_function rewrites the text in a positive tone.
+def summarizer_function(state: State) -> dict:
     prompt = f"Write {state['text']} in as positive a tone as possible."
     result = llm.invoke(prompt)
     print(f"result: {result.content} \n")
+    # state["text"] becomes result.content.
     return {"text": result.content}
 
 
-# evaluator_agent estimates the sentiment of a text (using naive approach)
-def evaluator_agent(state: State) -> dict:
+# evaluator_function estimates the sentiment of a text (using naive approach)
+def evaluator_function(state: State) -> dict:
     prompt = f"""On a scale from 0 (very negative) to 1 (very positive), 
     how positive is {state['text']}? Only return a number.\n\n"""
     response = llm.invoke(prompt)
@@ -68,11 +71,13 @@ def evaluator_agent(state: State) -> dict:
         value = 0.0
     # Print the sentiment score to see how it increases with each iteration.
     print(f"sentiment score: {value} \n")
+    # state["sentiment_score"] becomes value.
     return {"sentiment_score": value}
 
 
-# router_agent routes control to end_node or summarizer_node based on sentiment score
-def router_agent(state: State) -> dict:
+# router_function routes control to end_node or summarizer_node
+# based on sentiment score.
+def router_function(state: State) -> dict:
     if state["sentiment_score"] >= 0.85:
         return {"next": "terminate_iterations"}
     else:
@@ -91,16 +96,16 @@ builder = StateGraph(State)
 builder.add_node("end_node", lambda x: x)
 # Give a name to each node and specify the function
 # that will be executed by the node.
-builder.add_node("summarizer_node", summarizer_agent)
-builder.add_node("evaluator_node", evaluator_agent)
-builder.add_node("router_node", router_agent)
+builder.add_node("summarizer_node", summarizer_function)
+builder.add_node("evaluator_node", evaluator_function)
+builder.add_node("router_node", router_function)
 
 # 4.3 Specify the edges between nodes of the graph.
 builder.add_edge("summarizer_node", "evaluator_node")
 builder.add_edge("evaluator_node", "router_node")
 # Add edges from router_node to end_node and summarizer_node
-# Execute "end_node" when router_agent returns "terminate_iterations"
-# Execute "summarizer_node" when router_agent returns "iterate_again"
+# Execute "end_node" when router_function returns "terminate_iterations"
+# Execute "summarizer_node" when router_function returns "iterate_again"
 builder.add_conditional_edges(
     "router_node",
     lambda x: x["next"],  # routing function
@@ -126,6 +131,7 @@ graph_prompt = {
     "text": "The economy is in shambles. Inflation is high and unemployment is rising",
     "sentiment_score": 0.0,
 }
+print("📜 Text with different positive sentiments. Stops when sentiment is high enough. \n")
 # Execute the graph.
 result = graph.invoke(graph_prompt)
 # result is the final value of state.

@@ -52,7 +52,7 @@ class State(TypedDict):
 
 # ----------------------------------------------
 
-# There are multiple map_node agents.
+# There are multiple map_nodes. Each node is an agent.
 # The j-th map_node agent calls summarize_nth_doc(j).
 
 
@@ -132,21 +132,17 @@ graph = builder.compile()
 # Step 5: Run graph
 # ----------------------------------------------
 
-state = {
+# graph_prompt, is a dict that specifies some fields of state.
+graph_prompt = {
     # docs is a list of documents to summarize.
     "docs": [
         "Python is a programming language created by Guido and is used at colleges and schools.",
         "LangGraph is a Python library for building graphs that control how LLMs interact. It is used at Caltech.",
         "Map-Reduce is a distributed processing technique for large-scale data analysis."
-    ],
-    # summaries is a list of summaries for each document.
-    # Initialize summaries as an empty list. Each map_node appends its
-    # summary to this list.
-    "summaries": [],
-    # final_summary is a single summary of all the summaries.
-    "final_summary": ""
+    ]
 }
-
-result = graph.invoke(state)
+# Execute the graph.
+result = graph.invoke(graph_prompt)
+# result is the final value of state.
 print("\n✅ Final Summary:\n")
 print(result['final_summary'])
