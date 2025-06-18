@@ -58,7 +58,7 @@ This folder contains a structured series of LangGraph examples. Each example int
 ### 7. Multi-Agent Coordination
 - **Concept**: Use different agents for planning, execution, and validation.
 - **Example**: Planner suggests a plan, executors carry it out.
-- **File**: _(coming soon)_
+- **File**: multi_agent_coordination.py
 
 ---
 
