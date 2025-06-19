@@ -64,8 +64,8 @@ This folder contains a structured series of LangGraph examples. Each example int
 
 ### 8. Human-in-the-Loop
 - **Concept**: Pause and allow user approval before continuing.
-- **Example**: Wait for review before publishing a generated answer.
-- **File**: _(coming soon)_
+- **Example**: Get coding task from user. Show generated code to user and get approval. If user approves code then ask user for test input for the code. Run the test input and show results to user. If user does not approve results of code execution then generate new code.
+- **File**: code_feedback_loop.py
 
 ---
 
