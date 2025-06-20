@@ -105,7 +105,7 @@ def generate_genre_output_function(state: State) -> dict:
     genre = state['genre']
     prompt = f'''
     Write a {genre} in the style of {author}.
-    The {genre} should be short and in the author's voice.
+    The {genre} should be short and in the author's unique voice.
     '''
     result = llm.invoke(prompt)
     genre_output = result.content
