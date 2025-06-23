@@ -23,9 +23,6 @@ api_key = os.getenv('OPENAI_API_KEY')
 if not api_key:
     raise ValueError("No API key found. Please check your .env file.")
 
-# Create an OpenAI client
-client = OpenAI(api_key=api_key)
-
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3)
 
 # ---------------------------------------------
