@@ -1,5 +1,10 @@
+'''
+The class inherited by all agents in message_passing_examples.
+An agent receives messages along a single input queue, self.queue.
+
+
+'''
 from multiprocessing import Process, SimpleQueue
-import time
 
 
 class Agent:
@@ -38,32 +43,3 @@ class Agent:
         p = Process(target=self.run)
         p.start()
         return p
-
-
-def init_fn(self):
-    for i in range(3):
-        self.peers["Receiver"].queue.put(f"Hi {i}")
-        time.sleep(0.5)
-    self.peers["Receiver"].queue.put("__STOP__")
-
-
-def handle_msg(self, msg):
-    print(f"{self.name} received: {msg}")
-
-
-if __name__ == "__main__":
-    # Create agents
-    receiver = Agent(handle_msg=handle_msg, name="Receiver")
-    sender = Agent(init_fn=init_fn, name="Sender")
-
-    # Wire agents using peer dictionary
-    sender.peers["Receiver"] = receiver
-
-    # Start agents
-    sender.run()
-    receiver.run()
-    # sender_proc = sender.start()
-    # receiver_proc = receiver.start()
-
-    # sender_proc.join()
-    # receiver_proc.join()

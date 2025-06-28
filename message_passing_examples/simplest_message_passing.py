@@ -1,43 +1,38 @@
-from multiprocessing import Process, SimpleQueue
+from core import Network, Agent
 import time
 
-# Agent A: Sends messages
+
+def init_fn(self):
+    for i in range(3):
+        print(f'Sending Hi {i}')
+        self.send(msg=f"Hi {i}", outport="output")
+        time.sleep(0.5)
+    self.send(msg="__STOP__", outport='output')
 
 
-def agent_a(queue: SimpleQueue):
-    for i in range(5):
-        msg = f"Message {i} from Agent A"
-        print(f"[Agent A] Sending: {msg}")
-        queue.put(msg)
-        time.sleep(1)
-    queue.put("STOP")  # Signal Agent B to stop
-    print("[Agent A] Finished sending messages.")
-
-# Agent B: Receives messages
+def handle_msg(self, msg):
+    print(f"{self.name} received: {msg}")
 
 
-def agent_b(queue: SimpleQueue):
-    while True:
-        msg = queue.get()
-        if msg == "STOP":
-            print("[Agent B] Received STOP signal.")
-            break
-        print(f"[Agent B] Received: {msg}")
+agent_receiver = Agent(
+    inport='input',
+    handle_msg=handle_msg,
+    name="Receiver"
+)
+
+agent_sender = Agent(
+    outports=['output'],
+    init_fn=init_fn,
+    name="Sender"
+)
 
 
 if __name__ == "__main__":
-    queue = SimpleQueue()
 
-    # Create the processes
-    process_a = Process(target=agent_a, args=(queue,))
-    process_b = Process(target=agent_b, args=(queue,))
-
-    # Start the processes
-    process_a.start()
-    process_b.start()
-
-    # Wait for both to complete
-    process_a.join()
-    process_b.join()
-
-    print("Both agents finished.")
+    nodes = {'sender': agent_sender,
+             'receiver': agent_receiver}
+    edges = [
+        ['sender', 'output', 'receiver', 'input']
+    ]
+    net = Network(name='net', nodes=nodes, edges=edges)
+    net.run()

@@ -58,6 +58,7 @@ class Agent:
         return p
 
 # OpenAI-powered message handler
+# gpt_agent's (receiver's) handle_msg function.
 
 
 def gpt_handle_msg(self, msg):
@@ -65,7 +66,13 @@ def gpt_handle_msg(self, msg):
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": msg}],
+            messages=[
+                # Create a persona for this agent.
+                {"role": "system",
+                 "content": "You are an expert editor who creates polite clean documents"},
+                # The GPT client processes msg.
+                {"role": "user", "content": msg},
+            ],
             temperature=0.3
         )
         reply = response.choices[0].message.content.strip()
@@ -73,7 +80,8 @@ def gpt_handle_msg(self, msg):
     except Exception as e:
         print(f"{self.name} encountered an error: {e}")
 
-# Sender sends a message to GPT
+# Sender's initialization function.
+# Sender sends a message to GPT agent.
 
 
 def init_fn(self):
@@ -84,12 +92,15 @@ def init_fn(self):
 
 
 if __name__ == "__main__":
+    # Step 1: Create agents.
     gpt_agent = Agent(handle_msg=gpt_handle_msg, name="GPT")
+    gpt_agent.value = v
     sender = Agent(init_fn=init_fn, name="Sender")
+    # Step 2: Connect agents.
     sender.peers["GPT"] = gpt_agent
-
+    # Step 3: Start agents.
     sender_proc = sender.start()
     gpt_proc = gpt_agent.start()
-
+    # Step 4: Wait for agents to finish.
     sender_proc.join()
     gpt_proc.join()
