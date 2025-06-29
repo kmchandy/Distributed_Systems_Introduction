@@ -1,4 +1,4 @@
-from core import Network, Agent
+from core import Network, SimpleAgent
 import time
 
 
@@ -14,25 +14,25 @@ def handle_msg(self, msg):
     print(f"{self.name} received: {msg}")
 
 
-agent_receiver = Agent(
+agent_receiver = SimpleAgent(
     inport='input',
     handle_msg=handle_msg,
-    name="Receiver"
+    name="Receiver",
 )
 
-agent_sender = Agent(
+agent_sender = SimpleAgent(
     outports=['output'],
     init_fn=init_fn,
-    name="Sender"
+    name="Sender",
 )
 
 
 if __name__ == "__main__":
 
-    nodes = {'sender': agent_sender,
-             'receiver': agent_receiver}
-    edges = [
+    blocks = {'sender': agent_sender,
+              'receiver': agent_receiver}
+    connections = [
         ['sender', 'output', 'receiver', 'input']
     ]
-    net = Network(name='net', nodes=nodes, edges=edges)
+    net = Network(name='net', blocks=blocks, connections=connections)
     net.run()
