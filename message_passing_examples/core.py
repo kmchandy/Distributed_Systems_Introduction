@@ -108,10 +108,14 @@ loop terminates when a '__STOP__' message is received.
 
 
 from __future__ import annotations
-from multiprocessing import SimpleQueue
-from typing import Callable, Optional, List, Tuple, Dict
-from multiprocessing import SimpleQueue
+from multiprocessing import Queue, SimpleQueue
 from typing import Optional, List, Callable, Dict, Tuple, Any
+import inspect
+
+
+def is_queue(q):
+    # Return True is q is a queue.
+    return isinstance(q, Queue) or isinstance(q, SimpleQueue)
 
 
 class Block:
@@ -122,23 +126,304 @@ class Block:
         inports: Optional[List[str]] = None,
         outports: Optional[List[str]] = None,
     ):
-        self.name = name
-        self.description = description
+        # Set name and description for this block
+        self.name = name or self.__class__.__name__
+        self.description = description or "No description provided."
+
+        # Initialize input and output port lists
         self.inports = inports or []
         self.outports = outports or []
 
-        # Dict: port name -> SimpleQueue
+        # Check for duplicate port names
+        if len(set(self.inports)) != len(self.inports):
+            raise ValueError(f"Duplicate inport names in block '{self.name}'.")
+        if len(set(self.outports)) != len(self.outports):
+            raise ValueError(
+                f"Duplicate outport names in block '{self.name}'.")
+
+        # self.in_q[inport] is a SimpleQueue
         self.in_q: Dict[str, SimpleQueue] = {
             port: SimpleQueue() for port in self.inports
         }
-        # Dict: port name -> SimpleQueue
+        # self.in_q[outport] is initially None. It will become a SimpleQueue
+        # when this outport is connected to another port.
         self.out_q: Dict[str, Optional[SimpleQueue]] = {
             port: None for port in self.outports
         }
-        # A block must have a run function.
-        if not hasattr(self, 'run'):
+        # Ensure that the block has a  defined `run()` method.
+        if not hasattr(self, 'run') or not inspect.ismethod(getattr(self, 'run')):
             raise NotImplementedError(
-                f"{self.__class__.__name__} must define a `run()` method.")
+                f"Class {self.__class__.__name__}, see block {name} must define a `run()` method.")
+
+
+class Network(Block):
+    '''
+    Network parameters
+    ----------------
+    1. name: Optional[str]          -- inherited from class Block
+    2. description: Optional[str]   -- inherited from class Block
+    2. inports: list of str         -- inherited from class Block
+    3. outports: list of str        -- inherited from class Block
+    4. blocks is a dict:  block_name   --->  block
+    where block is a component of the network, and block is an instance of Block.
+    5. connections is a list of 4-tuples where the elements are strings.
+    A connect is one of the following:
+        (a) [from_block, from_port, to_block, to_port] 
+        Connect from_port of from_block to to_port of to_block.
+        (b) ['external', from_port, to_block, to_port]
+        Connect from_port of the network to to_port of to_block.
+        (c) [from_block, from_port, 'external', to_port]
+        Connect from_port of from_block to to_port of the network.
+    6. run function of Network overrides the run function in Block.
+       The network run function executes run on the component blocks
+       of the network.
+
+    '''
+
+    def __init__(
+        self,
+        name: str = None,
+        description: str = None,
+        inports: Optional[List[str]] = None,
+        outports: Optional[List[str]] = None,
+        blocks: Dict[str, Block] = None,
+        connections: List[Tuple[str, str, str, str]] = None,
+    ):
+        # Initialize as a Block
+        super().__init__(name=name, description=description,
+                         inports=inports, outports=outports)
+
+        # Store the network's internal blocks and connection graph.
+        # A network's blocks and connections can be passed in as parameters or
+        # they can be edited by the functions edit_blocks and edit_connections.
+        self.blocks = blocks or {}
+        self.connections = connections or []
+
+        # Create queues for the network-level, i.e. externally visible, inports.
+        # For inport in self.inports,  self.in_q[inport] is a queue.
+        # Messages sent to inport are put on the queue self.in_q[inport].
+        # Initially, self.in_q is empty. (key, value) pairs are added to self.in_q
+        # when network-level inports are connected to outports of component
+        # blocks.
+        self.in_q = {}
+        # Create queues for the network-level, i.e. externally visible, outports.
+        # Similar to self.in_q
+        self.out_q = {}
+
+    def connect(self):
+        # Connect ports between blocks and ports of the network
+        for (from_block, from_port, to_block, to_port) in self.connections:
+            try:
+                if from_block == "external":
+                    # Network input connected to component input
+                    # In this case, from_port is an input port of the network.
+                    # Messages sent to from_port of the network are sent to
+                    # to_port of to_block.
+                    # [input from_port of network ]   --->   [to_port of to_block]
+                    if from_port not in self.in_q:
+                        raise ValueError(
+                            f"Input port '{from_port}' not in network '{self.name}'.")
+                    if to_port not in self.blocks[to_block].in_q:
+                        raise ValueError(
+                            f"Input port '{to_port}' not in block '{self.blocks[to_block]}'.")
+                    if not is_queue(self.blocks[to_block].in_q[to_port]):
+                        raise TypeError(
+                            "{self.blocks[to_block].in_q[to_port]} is not a queue. ")
+                    self.in_q[from_port] = self.blocks[to_block].in_q[to_port]
+                elif to_block == "external":
+                    # Connect component outport to network outport.
+                    # In this case, to_port is an output port of the network.
+                    # Messages sent from from_port of from_block are sent from
+                    # to_port of the network.
+                    # [from_port of from_block ]   --->   [output to_port of network]
+                    if to_port not in self.out_q:
+                        raise ValueError(
+                            f"Output port '{to_port}' not found in network '{self.name}'.")
+                    if from_port not in self.blocks[from_block].out_q:
+                        raise ValueError(
+                            f"out_port {from_port} not in block {self.blocks[from_block]} ")
+                    if not is_queue(self.out_q[to_port]):
+                        raise TypeError(
+                            "{self.out_q[to_port]} of block {self.name} is not a queue. ")
+                    self.blocks[from_block].out_q[from_port] = self.out_q[to_port]
+                else:
+                    # Connect from_port of from_block to to_port of to_block
+                    # [from_port of from_block ]   --->   [to_port of to_block]
+                    if from_port not in self.blocks[from_block].out_q:
+                        raise ValueError(
+                            f"out_port {from_port} not in block {self.blocks[from_block]} ")
+                    if to_port not in self.blocks[to_block].in_q:
+                        raise ValueError(
+                            f"Input port '{to_port}' not in block '{self.blocks[to_block]}'.")
+                    if not is_queue(self.blocks[to_block].in_q[to_port]):
+                        raise TypeError(
+                            "{self.blocks[to_block].in_q[to_port]} of  of block {self.name} is not a queue. ")
+                    self.blocks[from_block].out_q[from_port] = self.blocks[to_block].in_q[to_port]
+            except KeyError as e:
+                raise ValueError(
+                    f"Invalid block name in connection: {e}. Check connection {from_block}->{to_block}.")
+            except Exception as e:
+                raise ValueError(
+                    f"Error connecting '{from_block}.{from_port}' to '{to_block}.{to_port}': {e}")
+
+    def connect(self):
+        for connect in self.connections:
+            from_block, from_port, to_block, to_port = connect
+            if from_block == "external":
+                # In this case, from_port is an input port of the network.
+                # Connect the input port, from_port, of the network
+                # to the input port, to_port, of to_block.
+                # [input from_port of network ]   --->   [to_port of to_block]
+                self.in_q[from_port] = self.blocks[to_block].in_q[to_port]
+            elif to_block == "external":
+                # In this case, to_port is an output port of the network.
+                # Connect the output port, to_port, of the network
+                # to the output port, from_port, of from_block.
+                # [from_port of from_block ]   --->   [output to_port of network]
+                self.blocks[from_block].out_q[from_port] = self.out_q[to_port]
+            else:
+                # Connect from_port of from_block to to_port of to_block
+                # [from_port of from_block ]   --->   [to_port of to_block]
+                self.blocks[from_block].out_q[from_port] = self.blocks[to_block].in_q[to_port]
+
+    def check(self):
+        '''
+        Validates that:
+        - All referenced block and port names are valid.
+        - An inport of the network is connected to exactly one inport of 
+            a component block.
+        - An outport of the network is connected to exactly one outport of a component
+            block.
+        - Each outport of a component block is connected exactly once. 
+            An outport of a component block is connected to exactly one inport of a component block
+            or to an outport of the entire network.
+        - Each inport of a component block can be connected an arbitrary number of times.
+            An inport of a component block can be fed from multiple inports of the 
+            network and from multiple outports of component blocks.
+
+        '''
+        # Helper for clear errors
+        def assert_single_connection(port, matches):
+            if len(matches) != 1:
+                raise ValueError(
+                    f'{port} must be connected exactly once, but found {len(matches)} connections.'
+                )
+
+        # 1. Make sure that there is no block called 'external'
+        if 'external' in self.blocks:
+            raise ValueError(
+                f' *external* is a reserved keyword and cannot be used as a block name.'
+            )
+
+        # 2. Check connections
+        for connect in self.connections:
+            # Check connections from network input ports
+            if connect[0] == "external":
+                if connect[1] not in self.inports:
+                    raise ValueError(
+                        f' The network {self.name} has no input port called {connect[1]}.')
+                if connect[2] not in self.blocks.keys():
+                    raise ValueError(
+                        f''' The network {self.name} input port {connect[1]} is connected to block {connect[2]} 
+                        which is not one of the declared blocks of the network.''')
+                if connect[3] not in self.inports:
+                    raise ValueError(
+                        f''' The network {self.name} input port {connect[1]} is connected to port {connect[3]}
+                        of block {connect[2]}. But {connect[3]} is not an input port of block {connect[2]}.''')
+
+            # Check connections to network output ports
+            if connect[2] == "external":
+                if connect[3] not in self.outports:
+                    raise ValueError(
+                        f''' The network {self.name} has no output port called {connect[3]}.''')
+                if connect[0] not in self.blocks.keys():
+                    raise ValueError(
+                        f''' The network {self.name} output port {connect[3]} is connected to 
+                        block {connect[0]} which is not one of the declared blocks of the network.''')
+                if connect[1] not in self.outports:
+                    raise ValueError(
+                        f''' The network {self.name} output port {connect[3]} is connected to port {connect[1]} 
+                        of block {connect[0]}. But {connect[1]} is not an output port of block {connect[0]}.''')
+            # Check internal connections
+            if (connect[0] != 'external') and (connect[2] != 'external'):
+                if connect[0] not in self.blocks.keys():
+                    raise ValueError(
+                        f''' The {connect} of network {self.name} is incorrect.
+                        {connect[0]} is not a block of the network.''')
+                if connect[2] not in self.blocks.keys():
+                    raise ValueError(
+                        f''' The {connect} of network {self.name} is incorrect.
+                        {connect[2]} is not a block of the network.''')
+                if connect[1] not in self.blocks[connect[0]].outports:
+                    raise ValueError(
+                        f''' The {connect} of network {self.name} is incorrect. {connect[1]} is not an output
+                         port of block {self.blocks[connect[0]].name}.''')
+                if connect[3] not in self.blocks[connect[2]].inports:
+                    raise ValueError(
+                        f''' The {connect} of network {self.name} is incorrect.
+                        {connect[3]} is not an input port of block {self.blocks[connect[2]].name}.''')
+
+        # 3. Validate network-level inports
+        for inport in self.inports:
+            matches = [e for e in self.connections if e[0]
+                       == "external" and e[1] == inport]
+            assert_single_connection(
+                port=f"Network {self.name} inport '{inport}'",
+                matches=matches)
+
+        # 4. Validate network-level outports
+        for outport in self.outports:
+            matches = [e for e in self.connections if e[2]
+                       == "external" and e[3] == outport]
+            assert_single_connection(
+                port=f"Network {self.name}  outport '{outport}'",
+                matches=matches)
+
+        # 5. Validate each block’s inports and outports
+        for block_name, block in self.blocks.items():
+            # Outports
+            for outport in block.outports or []:
+                to_external = [e for e in self.connections if e[0] ==
+                               block_name and e[1] == outport and e[2] == "external"]
+                to_internal = [e for e in self.connections if e[0] ==
+                               block_name and e[1] == outport and e[2] != "external"]
+
+                if len(to_external) == 1 and len(to_internal) == 0:
+                    continue  # valid external connection
+                elif len(to_internal) == 1 and len(to_external) == 0:
+                    continue  # valid internal connection
+                else:
+                    raise ValueError(
+                        f'''Outport '{outport}' of block '{block_name}' of network {self.name}
+                        must be connected exactly once. It is connected to {len(to_external)}
+                        outports of the network and to {len(to_internal)} inports of blocks
+                        in the network.'''
+                    )
+
+            # Inports
+            for inport in block.inports or []:
+                from_external = [e for e in self.connections if e[0] ==
+                                 "external" and e[3] == inport and e[2] == block_name]
+                from_internal = [e for e in self.connections if e[3] ==
+                                 inport and e[2] == block_name and e[0] != "external"]
+
+                if len(from_external) + len(from_internal) == 0:
+                    print(f'''WARNING. Input port {inport} of block {block_name} of 
+                          network {self.name} is not connected.'''
+                          )
+
+    def run(self):
+        # Check that connections are proper.
+        self.check()
+        try:
+            # Connect the network
+            self.connect()
+            # Execute all blocks in sequence
+            for block in self.blocks.values():
+                block.run()
+        except Exception as e:
+            raise RuntimeError(
+                f"Network '{self.name}' failed during execution: {e}")
 
 
 class Network(Block):
