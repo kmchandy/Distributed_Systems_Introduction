@@ -107,14 +107,14 @@ loop terminates when a '__STOP__' message is received.
 """
 
 from __future__ import annotations
-from multiprocessing import Queue, SimpleQueue
+from multiprocessing import SimpleQueue
 from typing import Optional, List, Callable, Dict, Tuple, Any
 import inspect
 
 
 def is_queue(q):
-    # Return True is q is a queue.
-    return isinstance(q, Queue) or isinstance(q, SimpleQueue)
+    # Return True if q is a queue with 'put' and 'get' functions.
+    return callable(getattr(q, "put", None)) and callable(getattr(q, "get", None))
 
 
 class Block:
@@ -210,8 +210,10 @@ class Network(Block):
         # Create queues for the network-level, i.e. externally visible, outports.
         # Similar to self.in_q
         self.out_q = {}
+        # Connect blocks of the network.
+        self.connect()
 
-    def connect(self):
+    def connect_ports(self):
         # Connect ports between blocks and ports of the network
         for from_block, from_port, to_block, to_port in self.connections:
             try:
@@ -281,26 +283,51 @@ class Network(Block):
                 )
 
     def connect(self):
-        for connect in self.connections:
-            from_block, from_port, to_block, to_port = connect
-            if from_block == "external":
-                # In this case, from_port is an input port of the network.
-                # Connect the input port, from_port, of the network
-                # to the input port, to_port, of to_block.
-                # [input from_port of network ]   --->   [to_port of to_block]
-                self.in_q[from_port] = self.blocks[to_block].in_q[to_port]
-            elif to_block == "external":
-                # In this case, to_port is an output port of the network.
-                # Connect the output port, to_port, of the network
-                # to the output port, from_port, of from_block.
-                # [from_port of from_block ]   --->   [output to_port of network]
-                self.blocks[from_block].out_q[from_port] = self.out_q[to_port]
-            else:
-                # Connect from_port of from_block to to_port of to_block
-                # [from_port of from_block ]   --->   [to_port of to_block]
-                self.blocks[from_block].out_q[from_port] = self.blocks[to_block].in_q[
-                    to_port
-                ]
+        """
+        Recursively connect ports of all component blocks. If a block is itself a Network,
+        it will call its own connect() method first. Then, the current network's
+        own external and internal connections are wired.
+        """
+        # Step 1: Recursively connect inner networks
+        for block in self.blocks.values():
+            if isinstance(block, Network):
+                block.connect()
+
+        # Step 2: Connect edges for this network
+        self.connect_ports()
+
+    def __init__(
+        self,
+        name: str = None,
+        description: str = None,
+        inports: Optional[List[str]] = None,
+        outports: Optional[List[str]] = None,
+        blocks: Dict[str, Block] = None,
+        connections: List[Tuple[str, str, str, str]] = None,
+    ):
+        # Initialize as a Block
+        super().__init__(
+            name=name, description=description, inports=inports, outports=outports
+        )
+
+        # Store the network's internal blocks and connection graph.
+        # A network's blocks and connections can be passed in as parameters or
+        # they can be edited by the functions edit_blocks and edit_connections.
+        self.blocks = blocks or {}
+        self.connections = connections or []
+
+        # Create queues for the network-level, i.e. externally visible, inports.
+        # For inport in self.inports,  self.in_q[inport] is a queue.
+        # Messages sent to inport are put on the queue self.in_q[inport].
+        # Initially, self.in_q is empty. (key, value) pairs are added to self.in_q
+        # when network-level inports are connected to outports of component
+        # blocks.
+        self.in_q = {}
+        # Create queues for the network-level, i.e. externally visible, outports.
+        # Similar to self.in_q
+        self.out_q = {}
+        # Connect blocks of the network.
+        self.connect()
 
     def check(self):
         """
@@ -329,7 +356,7 @@ class Network(Block):
         # 1. Make sure that there is no block called 'external'
         if "external" in self.blocks:
             raise ValueError(
-                f" *external* is a reserved keyword and cannot be used as a block name."
+                " *external* is a reserved keyword and cannot be used as a block name."
             )
 
         # 2. Check connections
@@ -458,8 +485,6 @@ class Network(Block):
         # Check that connections are proper.
         self.check()
         try:
-            # Connect the network
-            self.connect()
             # Execute all blocks in sequence
             for block in self.blocks.values():
                 block.run()
