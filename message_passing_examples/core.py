@@ -286,15 +286,30 @@ class Network(Block):
         """
         Recursively connect ports of all component blocks. If a block is itself a Network,
         it will call its own connect() method first. Then, the current network's
-        own external and internal connections are wired.
+        own external and internal connections are connected.
         """
-        # Step 1: Recursively connect inner networks
-        for block in self.blocks.values():
-            if isinstance(block, Network):
-                block.connect()
+        try:
+            # Step 1: Recursively connect inner networks
+            for block_name, block in self.blocks.items():
+                if isinstance(block, Network):
+                    block.connect()
 
-        # Step 2: Connect edges for this network
-        self.connect_ports()
+            # Step 2: Connect this network's edges
+            self.connect_ports()
+
+        except Exception as e:
+            raise RuntimeError(
+                f"""Network '{self.name}' failed to connect.
+    Likely causes:
+    • A port is not declared or misspelled.
+    • A block name in a connection is incorrect.
+    • An inport/outport is missing or not a queue.
+    • A queue may not have been initialized properly.
+
+    Original error:
+        {type(e).__name__}: {e}
+    """
+            ) from e
 
     def __init__(
         self,
@@ -350,13 +365,13 @@ class Network(Block):
         def assert_single_connection(port, matches):
             if len(matches) != 1:
                 raise ValueError(
-                    f"{port} must be connected exactly once, but found {len(matches)} connections."
+                    f"{port} must be connected exactly once, but found {len(matches)} connections in block {self.name}."
                 )
 
         # 1. Make sure that there is no block called 'external'
         if "external" in self.blocks:
             raise ValueError(
-                " *external* is a reserved keyword and cannot be used as a block name."
+                " *external* is a reserved keyword but is used as a block name in {self.name}."
             )
 
         # 2. Check connections
@@ -365,11 +380,11 @@ class Network(Block):
             if connect[0] == "external":
                 if connect[1] not in self.inports:
                     raise ValueError(
-                        f" The network {self.name} has no input port called {connect[1]}."
+                        f" The network '{self.name}' has no inport called {connect[1]}."
                     )
                 if connect[2] not in self.blocks.keys():
                     raise ValueError(
-                        f""" The network {self.name} input port {connect[1]} is connected to block {connect[2]} 
+                        f""" The network {self.name} inport {connect[1]} is connected to block {connect[2]} 
                         which is not one of the declared blocks of the network."""
                     )
                 if connect[3] not in self.inports:

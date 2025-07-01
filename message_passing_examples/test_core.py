@@ -172,17 +172,21 @@ class TestNetwork(unittest.TestCase):
         sender = SimpleAgent(name="Sender", outports=["out"])
         receiver = SimpleAgent(name="Receiver", inport="in")
 
-        net = Network(
-            name="BadNet",
-            inports=[],
-            outports=[],
-            blocks={"sender": sender, "receiver": receiver},
-            connections=[
-                ("sender", "bad_out", "receiver", "in")
-            ]
-        )
-        with self.assertRaises(ValueError):
-            net.check()
+        # The invalid port 'bad_out' will trigger an error during Network construction
+        with self.assertRaises(RuntimeError) as context:
+            net = Network(
+                name="BadNet",
+                inports=[],
+                outports=[],
+                blocks={"sender": sender, "receiver": receiver},
+                connections=[
+                    ("sender", "bad_out", "receiver", "in")
+                ]
+            )
+
+        # Optional: verify error message contains helpful hints
+        self.assertIn("bad_out", str(context.exception))
+        self.assertIn("Likely causes", str(context.exception))
 
 
 if __name__ == "__main__":
